@@ -118,3 +118,4 @@ journalctl -u yba-bot -f
 | 🏆 | **Top 10** | Топ-10 сезона | Эксклюзивная роль для 10 лучших игроков |
 
 <!-- auto-update test Fri Oct 23 13:47:11 MSK 2026 -->
+<!-- auto-deploy verified -->

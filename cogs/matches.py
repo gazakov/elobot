@@ -1060,7 +1060,11 @@ class ChallengeView(discord.ui.View):
         thread = None
         try:
             if hasattr(interaction.channel, "create_thread"):
-                t_name = f"⚔️・{challenger_member.display_name[:10]} vs {challenged_member.display_name[:10]}"
+                p1_country = await asyncio.to_thread(self.db.get_user_country, challenger_member.id)
+                p2_country = await asyncio.to_thread(self.db.get_user_country, challenged_member.id)
+                c_flag = config.get_country_flag(p1_country)
+                d_flag = config.get_country_flag(p2_country)
+                t_name = f"⚔️・{c_flag}{challenger_member.display_name[:10]} vs {d_flag}{challenged_member.display_name[:10]}"[:100]
                 target_msg = self.message or interaction.message
                 if target_msg:
                     thread = await target_msg.create_thread(name=t_name, auto_archive_duration=1440)
@@ -1778,9 +1782,11 @@ class MatchesCog(commands.Cog):
         w_streak_str = locales.t("match_winner_streak", lang, count=w_user["streak"]) if w_user["streak"] > 0 else ""
 
         build_label = "🧬 Build" if lang == "en" else "🧬 Связка"
+        w_flag = config.get_country_flag(w_user.get("country"))
+        l_flag = config.get_country_flag(l_user.get("country"))
 
         embed.add_field(
-            name=locales.t("match_winner_field", lang, name=winner.display_name),
+            name=locales.t("match_winner_field", lang, name=f"{w_flag}{winner.display_name}"),
             value=f"{w_change}{w_streak_str}\n{build_label}: **{w_b}**",
             inline=False
         )
@@ -1796,7 +1802,7 @@ class MatchesCog(commands.Cog):
         )
 
         embed.add_field(
-            name=locales.t("match_loser_field", lang, name=loser.display_name),
+            name=locales.t("match_loser_field", lang, name=f"{l_flag}{loser.display_name}"),
             value=f"{l_change}\n{build_label}: **{l_b}**",
             inline=False
         )
@@ -1829,7 +1835,7 @@ class MatchesCog(commands.Cog):
         if target_thread:
             await target_thread.send(embed=embed)
             try:
-                new_t_name = f"✅・{winner.display_name[:12]} def. {loser.display_name[:12]}"[:100]
+                new_t_name = f"✅・{w_flag}{winner.display_name[:10]} def. {l_flag}{loser.display_name[:10]}"[:100]
                 await target_thread.edit(name=new_t_name)
             except Exception as e:
                 log.warning(f"⚠️ Не удалось переименовать ветку дуэли: {e}")
