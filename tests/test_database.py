@@ -441,6 +441,28 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(len(all_stats_a), 1)
         self.assertEqual(all_stats_a[0]["build_name"], "SPTW + Pluck")
 
+    def test_record_match_with_other_notes(self):
+        """Проверка сохранения параметра other (прочее/заметки к матчу)"""
+        self.db.get_or_create_user(910, "PlayerX")
+        self.db.get_or_create_user(911, "PlayerY")
+
+        _, match_id = self.db.record_match(
+            winner_id=910,
+            loser_id=911,
+            rep_id=999,
+            proof_url="https://youtube.com/watch?v=123",
+            winner_build="GER + Pluck",
+            loser_build="SP + Boxing",
+            other="2-0, чистая победа без лагов"
+        )
+
+        with self.db._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT other FROM matches WHERE id = ?", (match_id,))
+            row = cursor.fetchone()
+            self.assertIsNotNone(row)
+            self.assertEqual(row["other"], "2-0, чистая победа без лагов")
+
     def test_user_bio_gang_alts(self):
         """Проверка сохранения и обновления bio, gang, alts"""
         self.db.get_or_create_user(910, "LorePlayer")

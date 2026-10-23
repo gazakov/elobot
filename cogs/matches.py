@@ -1677,7 +1677,8 @@ class MatchesCog(commands.Cog):
         loser: discord.Member,
         proof: Optional[str] = None,
         winner_build: Optional[str] = None,
-        loser_build: Optional[str] = None
+        loser_build: Optional[str] = None,
+        other: Optional[str] = None
     ):
         lang = locales.get_lang(interaction)
         # 1. Защита от 3-секундного таймаута Discord (10062 Unknown Interaction)
@@ -1736,7 +1737,8 @@ class MatchesCog(commands.Cog):
                 rep_id=interaction.user.id,
                 proof_url=proof,
                 winner_build=winner_build,
-                loser_build=loser_build
+                loser_build=loser_build,
+                other=other
             )
 
             # Получаем свежие данные
@@ -1814,6 +1816,13 @@ class MatchesCog(commands.Cog):
                 inline=False
             )
 
+        if other and other.strip():
+            embed.add_field(
+                name=locales.t("match_other_field", lang),
+                value=discord.utils.escape_markdown(other.strip())[:1024],
+                inline=False
+            )
+
         embed.set_footer(text=f"Матч #{match_id}" if lang == "ru" else f"Match #{match_id}")
 
         # Автоматическое переименование ветки дуэли при завершении и закрытие вызова в БД
@@ -1875,7 +1884,8 @@ class MatchesCog(commands.Cog):
         loser="Игрок, потерпевший поражение",
         proof="Ссылка на скриншот/видео подтверждение",
         winner_build="Связка победителя (если отличается от /build, например: GER + Boxing)",
-        loser_build="Связка проигравшего (если отличается от /build, например: KCR + Hamon)"
+        loser_build="Связка проигравшего (если отличается от /build, например: KCR + Hamon)",
+        other="Прочее / Заметки к матчу (например: счёт 2-0, комментарий судьи)"
     )
     async def report(
         self,
@@ -1884,9 +1894,10 @@ class MatchesCog(commands.Cog):
         loser: discord.Member,
         proof: Optional[str] = None,
         winner_build: Optional[str] = None,
-        loser_build: Optional[str] = None
+        loser_build: Optional[str] = None,
+        other: Optional[str] = None
     ):
-        await self._execute_report(interaction, winner, loser, proof, winner_build, loser_build)
+        await self._execute_report(interaction, winner, loser, proof, winner_build, loser_build, other)
 
     @app_commands.command(name="report", description="[Для Респов и Админов] Внести результат матча 1v1")
     @app_commands.describe(
@@ -1894,7 +1905,8 @@ class MatchesCog(commands.Cog):
         loser="Игрок, потерпевший поражение",
         proof="Ссылка на скриншот/видео подтверждение",
         winner_build="Связка победителя (если отличается от /build, например: GER + Boxing)",
-        loser_build="Связка проигравшего (если отличается от /build, например: KCR + Hamon)"
+        loser_build="Связка проигравшего (если отличается от /build, например: KCR + Hamon)",
+        other="Прочее / Заметки к матчу (например: счёт 2-0, комментарий судьи)"
     )
     @app_commands.guild_only()
     async def report_alias(
@@ -1904,9 +1916,10 @@ class MatchesCog(commands.Cog):
         loser: discord.Member,
         proof: Optional[str] = None,
         winner_build: Optional[str] = None,
-        loser_build: Optional[str] = None
+        loser_build: Optional[str] = None,
+        other: Optional[str] = None
     ):
-        await self._execute_report(interaction, winner, loser, proof, winner_build, loser_build)
+        await self._execute_report(interaction, winner, loser, proof, winner_build, loser_build, other)
 
     @commands.command(name="report", aliases=["репорт", "match_report"])
     @commands.guild_only()
@@ -1915,9 +1928,11 @@ class MatchesCog(commands.Cog):
         ctx: commands.Context,
         winner: discord.Member,
         loser: discord.Member,
-        proof: Optional[str] = None
+        proof: Optional[str] = None,
+        *,
+        other: Optional[str] = None
     ):
-        """Префиксная команда !report @winner @loser [proof]"""
+        """Префиксная команда !report @winner @loser [proof] [other]"""
         lang = locales.get_user_lang(self.db, ctx.author.id, fallback="ru")
         is_resp = check_is_resp_or_admin(ctx.author, ctx.guild)
 
@@ -1937,6 +1952,8 @@ class MatchesCog(commands.Cog):
             await ctx.reply("❌ Респ не может судить собственный матч!" if lang != "en" else "❌ A referee cannot judge their own match!")
             return
 
+        is_admin = getattr(ctx.author, "guild_permissions", None) and ctx.author.guild_permissions.administrator
+
         async with self._lock:
             if not is_admin:
                 can_play, reason = await asyncio.to_thread(self.db.can_play_match, winner.id, loser.id)
@@ -1949,7 +1966,8 @@ class MatchesCog(commands.Cog):
                 winner_id=winner.id,
                 loser_id=loser.id,
                 rep_id=ctx.author.id,
-                proof_url=proof
+                proof_url=proof,
+                other=other
             )
             w_user = await asyncio.to_thread(self.db.get_or_create_user, winner.id)
             l_user = await asyncio.to_thread(self.db.get_or_create_user, loser.id)
@@ -1982,6 +2000,18 @@ class MatchesCog(commands.Cog):
             value=f"{l_rank['badge']} **{l_rank['tier']}** • `{int(round(update.loser_rating_after))} ELO` ({l_delta_str})",
             inline=False
         )
+        if proof:
+            embed.add_field(
+                name=locales.t("match_proof_field", lang),
+                value=locales.t("match_proof_link", lang, url=proof),
+                inline=False
+            )
+        if other and other.strip():
+            embed.add_field(
+                name=locales.t("match_other_field", lang),
+                value=discord.utils.escape_markdown(other.strip())[:1024],
+                inline=False
+            )
         embed.set_footer(text=f"Матч #{match_id}" if lang != "en" else f"Match #{match_id}")
         await ctx.reply(embed=embed)
 

@@ -617,6 +617,10 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "ru": "[Перейти к подтверждению]({url})",
         "en": "[View Proof]({url})"
     },
+    "match_other_field": {
+        "ru": "📝 Прочее",
+        "en": "📝 Other"
+    },
     "match_footer": {
         "ru": "Рейтинги и роли в Discord обновлены автоматически",
         "en": "Ratings and Discord roles updated automatically"

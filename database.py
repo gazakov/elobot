@@ -121,6 +121,7 @@ class Database:
                         proof_url TEXT,
                         winner_build TEXT,
                         loser_build TEXT,
+                        other TEXT DEFAULT NULL,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (season_id) REFERENCES seasons(id),
                         FOREIGN KEY (winner_id) REFERENCES users(discord_id),
@@ -128,8 +129,8 @@ class Database:
                     )
                 """)
 
-                # Миграция колонок winner_build и loser_build для существующих баз
-                for col in ["winner_build", "loser_build"]:
+                # Миграция колонок winner_build, loser_build и other для существующих баз
+                for col in ["winner_build", "loser_build", "other"]:
                     try:
                         cursor.execute(f"ALTER TABLE matches ADD COLUMN {col} TEXT DEFAULT NULL")
                     except sqlite3.OperationalError:
@@ -303,7 +304,8 @@ class Database:
         rep_id: int,
         proof_url: Optional[str] = None,
         winner_build: Optional[str] = None,
-        loser_build: Optional[str] = None
+        loser_build: Optional[str] = None,
+        other: Optional[str] = None
     ) -> Tuple[RatingUpdateResult, int]:
         """
         Регистрирует результат матча респом:
@@ -362,8 +364,8 @@ class Database:
                 # Сохранение матча
                 cursor.execute(
                     """
-                    INSERT INTO matches (season_id, winner_id, loser_id, winner_before, winner_after, loser_before, loser_after, rep_id, proof_url, winner_build, loser_build)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO matches (season_id, winner_id, loser_id, winner_before, winner_after, loser_before, loser_after, rep_id, proof_url, winner_build, loser_build, other)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         season["id"],
@@ -376,7 +378,8 @@ class Database:
                         rep_id,
                         proof_url,
                         w_b,
-                        l_b
+                        l_b,
+                        other.strip() if other and other.strip() else None
                     )
                 )
                 match_id = cursor.lastrowid
