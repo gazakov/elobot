@@ -1,0 +1,16 @@
+venv/
+__pycache__/
+*.py[cod]
+.git/
+.gitignore
+.env
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db
+backups/
+logs/
+data/
+tests/
+.DS_Store

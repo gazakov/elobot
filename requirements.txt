@@ -1,0 +1,4 @@
+# Python dependencies for YBA Discord ELO Bot
+discord.py>=2.3.0
+glicko2>=2.1.0
+python-dotenv>=1.0.0

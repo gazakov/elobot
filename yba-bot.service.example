@@ -1,0 +1,21 @@
+[Unit]
+Description=YBA Discord Ranked Bot (Glicko-2)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/yba-bot
+ExecStart=/opt/yba-bot/venv/bin/python bot.py
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/yba-bot/.env
+
+# Ограничения безопасности
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/opt/yba-bot/data /opt/yba-bot/logs
+
+[Install]
+WantedBy=multi-user.target
