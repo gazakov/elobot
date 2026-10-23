@@ -379,7 +379,7 @@ class TestCogsLoading(unittest.IsolatedAsyncioTestCase):
         owner.roles = []
         owner.edit = AsyncMock()
 
-        rank_info = get_rank_info(rating=2150.0, rd=80.0, total_games=10, rank_position=5)
+        rank_info = get_rank_info(rating=2050.0, rd=80.0, total_games=10, rank_position=5)
         res = await sync_user_roles(owner, rank_info, guild)
         self.assertEqual(res, "Master")
         owner.edit.assert_called_once()

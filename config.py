@@ -95,10 +95,10 @@ MAX_RD_CALIBRATION = 220.0
 # 🥉 Bronze (< 1300 ELO)
 # 🥈 Silver (1300 – 1499 ELO)
 # 🥇 Gold (1500 – 1699 ELO)
-# 🔘 Platinum (1700 – 1899 ELO)
-# 💎 Diamond (1900 – 2099 ELO)
-# 🔮 Master (2100 – 2249 ELO)
-# 👑 Grandmaster (2250+ ELO, требует ~80% винрейта)
+# 🔘 Platinum (1700 – 1849 ELO)
+# 💎 Diamond (1850 – 1999 ELO)
+# 🔮 Master (2000 – 2149 ELO)
+# 👑 Grandmaster (2150+ ELO, требует ~75-80% винрейта)
 # 🏆 Top 10 (уникальная роль для лучших игроков сезона)
 RANKS = [
     {
@@ -125,27 +125,27 @@ RANKS = [
     {
         "name": "Platinum",
         "min_rating": 1700,
-        "max_rating": 1899,
+        "max_rating": 1849,
         "badge": "🔘",
         "color": 0x3498DB, # Платиновый / Лазурный
     },
     {
         "name": "Diamond",
-        "min_rating": 1900,
-        "max_rating": 2099,
+        "min_rating": 1850,
+        "max_rating": 1999,
         "badge": "💎",
         "color": 0x00D2D3, # Алмазный / Бирюзовый
     },
     {
         "name": "Master",
-        "min_rating": 2100,
-        "max_rating": 2249,
+        "min_rating": 2000,
+        "max_rating": 2149,
         "badge": "🔮",
         "color": 0x9B59B6, # Фиолетовый
     },
     {
         "name": "Grandmaster",
-        "min_rating": 2250,
+        "min_rating": 2150,
         "max_rating": 99999,
         "badge": "👑",
         "color": 0xE74C3C, # Рубиновый / Красный

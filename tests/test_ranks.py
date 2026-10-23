@@ -32,29 +32,29 @@ class TestRanksSystem(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(info["badge"], "🥇")
 
     def test_platinum_tier(self):
-        """Проверка: игрок с рейтингом 1700–1899 получает Platinum"""
+        """Проверка: игрок с рейтингом 1700–1849 получает Platinum"""
         info = get_rank_info(rating=1780.0, rd=70.0, total_games=12)
         self.assertTrue(info["is_calibrated"])
         self.assertEqual(info["tier"], "Platinum")
         self.assertEqual(info["badge"], "🔘")
 
     def test_diamond_tier(self):
-        """Проверка: игрок с рейтингом 1900–2099 получает Diamond"""
-        info = get_rank_info(rating=1980.0, rd=70.0, total_games=15)
+        """Проверка: игрок с рейтингом 1850–1999 получает Diamond"""
+        info = get_rank_info(rating=1920.0, rd=70.0, total_games=15)
         self.assertTrue(info["is_calibrated"])
         self.assertEqual(info["tier"], "Diamond")
         self.assertEqual(info["badge"], "💎")
 
     def test_master_tier(self):
-        """Проверка: игрок с рейтингом 2100–2249 получает Master"""
-        info = get_rank_info(rating=2150.0, rd=65.0, total_games=20)
+        """Проверка: игрок с рейтингом 2000–2149 получает Master"""
+        info = get_rank_info(rating=2050.0, rd=65.0, total_games=20)
         self.assertTrue(info["is_calibrated"])
         self.assertEqual(info["tier"], "Master")
         self.assertEqual(info["badge"], "🔮")
 
     def test_grandmaster_tier(self):
-        """Проверка: игрок с рейтингом 2250+ получает Grandmaster"""
-        info = get_rank_info(rating=2280.0, rd=60.0, total_games=25)
+        """Проверка: игрок с рейтингом 2150+ получает Grandmaster"""
+        info = get_rank_info(rating=2180.0, rd=60.0, total_games=25)
         self.assertTrue(info["is_calibrated"])
         self.assertEqual(info["tier"], "Grandmaster")
         self.assertEqual(info["badge"], "👑")
