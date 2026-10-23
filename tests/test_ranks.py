@@ -25,29 +25,36 @@ class TestRanksSystem(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(info["badge"], "🥈")
 
     def test_gold_tier(self):
-        """Проверка: игрок с рейтингом 1500–1749 получает Gold"""
+        """Проверка: игрок с рейтингом 1500–1699 получает Gold"""
         info = get_rank_info(rating=1620.0, rd=80.0, total_games=8)
         self.assertTrue(info["is_calibrated"])
         self.assertEqual(info["tier"], "Gold")
         self.assertEqual(info["badge"], "🥇")
 
-    def test_diamond_tier(self):
-        """Проверка: игрок с рейтингом 1700–1849 получает Diamond"""
+    def test_platinum_tier(self):
+        """Проверка: игрок с рейтингом 1700–1899 получает Platinum"""
         info = get_rank_info(rating=1780.0, rd=70.0, total_games=12)
+        self.assertTrue(info["is_calibrated"])
+        self.assertEqual(info["tier"], "Platinum")
+        self.assertEqual(info["badge"], "🔘")
+
+    def test_diamond_tier(self):
+        """Проверка: игрок с рейтингом 1900–2099 получает Diamond"""
+        info = get_rank_info(rating=1980.0, rd=70.0, total_games=15)
         self.assertTrue(info["is_calibrated"])
         self.assertEqual(info["tier"], "Diamond")
         self.assertEqual(info["badge"], "💎")
 
     def test_master_tier(self):
-        """Проверка: игрок с рейтингом 1850–1999 получает Master"""
-        info = get_rank_info(rating=1920.0, rd=65.0, total_games=20)
+        """Проверка: игрок с рейтингом 2100–2249 получает Master"""
+        info = get_rank_info(rating=2150.0, rd=65.0, total_games=20)
         self.assertTrue(info["is_calibrated"])
         self.assertEqual(info["tier"], "Master")
         self.assertEqual(info["badge"], "🔮")
 
     def test_grandmaster_tier(self):
-        """Проверка: игрок с рейтингом 2000+ получает Grandmaster"""
-        info = get_rank_info(rating=2050.0, rd=60.0, total_games=25)
+        """Проверка: игрок с рейтингом 2250+ получает Grandmaster"""
+        info = get_rank_info(rating=2280.0, rd=60.0, total_games=25)
         self.assertTrue(info["is_calibrated"])
         self.assertEqual(info["tier"], "Grandmaster")
         self.assertEqual(info["badge"], "👑")
@@ -91,6 +98,7 @@ class TestRanksSystem(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Bronze", res)
         self.assertIn("Silver", res)
         self.assertIn("Gold", res)
+        self.assertIn("Platinum", res)
         self.assertIn("Diamond", res)
         self.assertIn("Master", res)
         self.assertIn("Grandmaster", res)
