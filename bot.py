@@ -17,6 +17,7 @@ from logger import log
 
 def get_bot_intents() -> discord.Intents:
     intents = discord.Intents.default()
+    intents.voice_states = True
     if ENABLE_MESSAGE_CONTENT:
         intents.message_content = True
     if ENABLE_MEMBERS_INTENT:
