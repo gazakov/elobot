@@ -549,7 +549,8 @@ class AdminCog(commands.Cog):
             code_lower = code.lower()
             flag = info["flag"]
 
-            if not query or query in code_lower or query in name_ru or query in name_en:
+            aliases = info.get("aliases", [])
+            if not query or query in code_lower or query in name_ru or query in name_en or any(query in a for a in aliases):
                 display_name = f"{flag} {info['name_ru' if lang != 'en' else 'name_en']} ({code})"
                 choices.append(app_commands.Choice(name=display_name[:100], value=code))
 

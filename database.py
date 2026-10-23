@@ -936,7 +936,10 @@ class Database:
                             pass
 
                     if last_upd:
-                        diff = datetime.utcnow() - last_upd
+                        now_naive = datetime.now(timezone.utc).replace(tzinfo=None)
+                        if last_upd.tzinfo is not None:
+                            last_upd = last_upd.astimezone(timezone.utc).replace(tzinfo=None)
+                        diff = now_naive - last_upd
                         cooldown_secs = cooldown_days * 86400
                         if diff.total_seconds() < cooldown_secs:
                             remaining_days = max(1, int(round((cooldown_secs - diff.total_seconds()) / 86400)))
