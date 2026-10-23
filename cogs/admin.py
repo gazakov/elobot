@@ -1,6 +1,6 @@
 import os
 import asyncio
-from typing import Optional, Union
+from typing import Optional, Union, List
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -491,6 +491,72 @@ class AdminCog(commands.Cog):
             color=discord.Color.blue()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(
+        name="admin_country",
+        description="[Только Админы] Установить или сбросить страну игрока без кд"
+    )
+    @app_commands.describe(
+        user="Пользователь, которому нужно изменить страну",
+        country="Код или название страны (или 'reset' для сброса)"
+    )
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.guild_only()
+    async def admin_country(self, interaction: discord.Interaction, user: discord.Member, country: str):
+        lang = locales.get_lang(interaction)
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(locales.t("error_admin_only", lang), ephemeral=True)
+            return
+
+        choice = country.strip().upper()
+        if choice in ("RESET", "NONE", "СБРОС", "CLEAR"):
+            await asyncio.to_thread(self.db.admin_set_user_country, user.id, None)
+            await interaction.response.send_message(
+                f"✅ Страна для {user.mention} была успешно сброшена." if lang != "en" else f"✅ Country for {user.mention} has been reset.",
+                ephemeral=True
+            )
+            return
+
+        c_info = config.get_country_info(choice)
+        if not c_info:
+            await interaction.response.send_message(locales.t("country_invalid", lang), ephemeral=True)
+            return
+
+        await asyncio.to_thread(self.db.admin_set_user_country, user.id, choice)
+        c_flag = c_info["flag"]
+        c_name = c_info["name_ru" if lang != "en" else "name_en"]
+        msg = (
+            f"✅ Страна для {user.mention} успешно изменена на {c_flag} **{c_name}** (`{choice}`) без кулдауна!"
+            if lang != "en" else
+            f"✅ Successfully set country for {user.mention} to {c_flag} **{c_name}** (`{choice}`) without cooldown!"
+        )
+        await interaction.response.send_message(msg, ephemeral=True)
+
+    @admin_country.autocomplete("country")
+    async def admin_country_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+        lang = locales.get_lang(interaction)
+        query = current.lower().strip()
+        choices: List[app_commands.Choice[str]] = []
+
+        # Опция сброса
+        if not query or any(k in query for k in ("reset", "сброс", "clear", "del", "none")):
+            reset_label = "❌ Сбросить страну (Reset country)" if lang != "en" else "❌ Reset country"
+            choices.append(app_commands.Choice(name=reset_label, value="RESET"))
+
+        for code, info in config.COUNTRIES.items():
+            name_ru = info["name_ru"].lower()
+            name_en = info["name_en"].lower()
+            code_lower = code.lower()
+            flag = info["flag"]
+
+            if not query or query in code_lower or query in name_ru or query in name_en:
+                display_name = f"{flag} {info['name_ru' if lang != 'en' else 'name_en']} ({code})"
+                choices.append(app_commands.Choice(name=display_name[:100], value=code))
+
+            if len(choices) >= 25:
+                break
+
+        return choices
 
 
 async def setup(bot: commands.Bot):

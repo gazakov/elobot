@@ -1965,18 +1965,20 @@ class MatchesCog(commands.Cog):
 
         w_delta_str = f"+{update.winner_delta:.1f}" if update.winner_delta >= 0 else f"{update.winner_delta:.1f}"
         l_delta_str = f"{update.loser_delta:.1f}"
+        w_flag = config.get_country_flag(w_user.get("country"))
+        l_flag = config.get_country_flag(l_user.get("country"))
         embed = discord.Embed(
             title="⚔️ Результат 1v1 дуэли внесен" if lang != "en" else "⚔️ 1v1 Duel Result Recorded",
             description=f"Матч #{match_id} внесен судьей {ctx.author.mention}",
             color=discord.Color.green()
         )
         embed.add_field(
-            name=f"🏆 Победитель: {winner.display_name}",
+            name=f"🏆 Победитель: {w_flag}{winner.display_name}" if lang != "en" else f"🏆 Winner: {w_flag}{winner.display_name}",
             value=f"{w_rank['badge']} **{w_rank['tier']}** • `{int(round(update.winner_rating_after))} ELO` ({w_delta_str})",
             inline=False
         )
         embed.add_field(
-            name=f"💀 Проигравший: {loser.display_name}",
+            name=f"💀 Проигравший: {l_flag}{loser.display_name}" if lang != "en" else f"💀 Loser: {l_flag}{loser.display_name}",
             value=f"{l_rank['badge']} **{l_rank['tier']}** • `{int(round(update.loser_rating_after))} ELO` ({l_delta_str})",
             inline=False
         )
@@ -1985,7 +1987,7 @@ class MatchesCog(commands.Cog):
 
         if isinstance(ctx.channel, discord.Thread):
             try:
-                new_t_name = f"✅・{winner.display_name[:12]} def. {loser.display_name[:12]}"[:100]
+                new_t_name = f"✅・{w_flag}{winner.display_name[:10]} def. {l_flag}{loser.display_name[:10]}"[:100]
                 await ctx.channel.edit(name=new_t_name)
             except Exception:
                 pass
@@ -2089,7 +2091,9 @@ class MatchesCog(commands.Cog):
         # 7. Если канал — ветка дуэли, переименовываем
         if isinstance(channel, discord.Thread):
             try:
-                new_t_name = f"🦆・Дак: {user.display_name[:12]}"[:100]
+                u_country = await asyncio.to_thread(self.db.get_user_country, user.id)
+                u_flag = config.get_country_flag(u_country)
+                new_t_name = f"🦆・Дак: {u_flag}{user.display_name[:10]}"[:100]
                 await channel.edit(name=new_t_name)
             except Exception:
                 pass
@@ -2728,14 +2732,16 @@ class MatchesCog(commands.Cog):
 
         p1_rbx = p1_data.get("roblox_username") or ("not linked" if lang == "en" else "не привязан")
         p2_rbx = p2_data.get("roblox_username") or ("not linked" if lang == "en" else "не привязан")
+        p1_flag = config.get_country_flag(p1_data.get("country"))
+        p2_flag = config.get_country_flag(p2_data.get("country"))
 
         if lang == "en":
             challenge_desc = (
                 f"### ⚔️ OFFICIAL 1v1 DUEL CHALLENGE\n"
                 f"**{interaction.user.mention}** challenges **{user.mention}**!\n\n"
-                f"🔴 **Initiator:** {interaction.user.mention} (`{p1_rbx}`)\n"
+                f"🔴 **Initiator:** {p1_flag}{interaction.user.mention} (`{p1_rbx}`)\n"
                 f"╰ **Rank:** {p1_rank['badge']} **{p1_rank['tier']}** • `{p1_rank['display']} ELO`\n\n"
-                f"🔵 **Opponent:** {user.mention} (`{p2_rbx}`)\n"
+                f"🔵 **Opponent:** {p2_flag}{user.mention} (`{p2_rbx}`)\n"
                 f"╰ **Rank:** {p2_rank['badge']} **{p2_rank['tier']}** • `{p2_rank['display']} ELO`\n\n"
                 f"⚙️ **Duel Settings:**\n"
                 f"• Format: **`{pub_format}`**\n"
@@ -2749,9 +2755,9 @@ class MatchesCog(commands.Cog):
             challenge_desc = (
                 f"### ⚔️ ВЫЗОВ НА ОФИЦИАЛЬНУЮ ДУЭЛЬ 1v1\n"
                 f"**{interaction.user.mention}** бросает вызов **{user.mention}**!\n\n"
-                f"🔴 **Инициатор:** {interaction.user.mention} (`{p1_rbx}`)\n"
+                f"🔴 **Инициатор:** {p1_flag}{interaction.user.mention} (`{p1_rbx}`)\n"
                 f"╰ **Ранг:** {p1_rank['badge']} **{p1_rank['tier']}** • `{p1_rank['display']} ELO`\n\n"
-                f"🔵 **Соперник:** {user.mention} (`{p2_rbx}`)\n"
+                f"🔵 **Соперник:** {p2_flag}{user.mention} (`{p2_rbx}`)\n"
                 f"╰ **Ранг:** {p2_rank['badge']} **{p2_rank['tier']}** • `{p2_rank['display']} ELO`\n\n"
                 f"⚙️ **Параметры дуэли:**\n"
                 f"• Формат: **`{pub_format}`**\n"
@@ -2788,7 +2794,7 @@ class MatchesCog(commands.Cog):
 
         # 1. Если это Форум-канал (как на основном сервере find-your-enemy)
         if isinstance(fights_channel, discord.ForumChannel):
-            t_name = f"⚔️・{interaction.user.display_name[:12]} vs {user.display_name[:12]}"
+            t_name = f"⚔️・{p1_flag}{interaction.user.display_name[:10]} vs {p2_flag}{user.display_name[:10]}"[:100]
             thread_with_msg = await fights_channel.create_thread(
                 name=t_name,
                 content=f"{user.mention} {interaction.user.mention}",

@@ -155,34 +155,34 @@ COUNTRY_COOLDOWN_DAYS = int(os.getenv("COUNTRY_COOLDOWN_DAYS", "30"))
 
 # Белый список стран (Европа и СНГ без мемных/тролльных вариантов вроде Узбекистана и Таджикистана)
 COUNTRIES = {
-    "RU": {"name_ru": "Россия", "name_en": "Russia", "flag": "🇷🇺"},
-    "UA": {"name_ru": "Украина", "name_en": "Ukraine", "flag": "🇺🇦"},
-    "KZ": {"name_ru": "Казахстан", "name_en": "Kazakhstan", "flag": "🇰🇿"},
-    "BY": {"name_ru": "Беларусь", "name_en": "Belarus", "flag": "🇧🇾"},
-    "GE": {"name_ru": "Грузия", "name_en": "Georgia", "flag": "🇬🇪"},
-    "AM": {"name_ru": "Армения", "name_en": "Armenia", "flag": "🇦🇲"},
-    "AZ": {"name_ru": "Азербайджан", "name_en": "Azerbaijan", "flag": "🇦🇿"},
-    "MD": {"name_ru": "Молдова", "name_en": "Moldova", "flag": "🇲🇩"},
-    "KG": {"name_ru": "Кыргызстан", "name_en": "Kyrgyzstan", "flag": "🇰🇬"},
-    "PL": {"name_ru": "Польша", "name_en": "Poland", "flag": "🇵🇱"},
-    "DE": {"name_ru": "Германия", "name_en": "Germany", "flag": "🇩🇪"},
-    "LV": {"name_ru": "Латвия", "name_en": "Latvia", "flag": "🇱🇻"},
-    "LT": {"name_ru": "Литва", "name_en": "Lithuania", "flag": "🇱🇹"},
-    "EE": {"name_ru": "Эстония", "name_en": "Estonia", "flag": "🇪🇪"},
-    "CZ": {"name_ru": "Чехия", "name_en": "Czech Republic", "flag": "🇨🇿"},
-    "RS": {"name_ru": "Сербия", "name_en": "Serbia", "flag": "🇷🇸"},
-    "BG": {"name_ru": "Болгария", "name_en": "Bulgaria", "flag": "🇧🇬"},
-    "RO": {"name_ru": "Румыния", "name_en": "Romania", "flag": "🇷🇴"},
-    "FI": {"name_ru": "Финляндия", "name_en": "Finland", "flag": "🇫🇮"},
-    "SE": {"name_ru": "Швеция", "name_en": "Sweden", "flag": "🇸🇪"},
-    "GB": {"name_ru": "Великобритания", "name_en": "United Kingdom", "flag": "🇬🇧"},
-    "FR": {"name_ru": "Франция", "name_en": "France", "flag": "🇫🇷"},
-    "IT": {"name_ru": "Италия", "name_en": "Italy", "flag": "🇮🇹"},
-    "ES": {"name_ru": "Испания", "name_en": "Spain", "flag": "🇪🇸"},
-    "NL": {"name_ru": "Нидерланды", "name_en": "Netherlands", "flag": "🇳🇱"},
-    "TR": {"name_ru": "Турция", "name_en": "Turkey", "flag": "🇹🇷"},
-    "IL": {"name_ru": "Израиль", "name_en": "Israel", "flag": "🇮🇱"},
-    "US": {"name_ru": "США", "name_en": "United States", "flag": "🇺🇸"},
+    "RU": {"name_ru": "Россия", "name_en": "Russia", "flag": "🇷🇺", "aliases": ["рф", "рус", "рашка", "российская"]},
+    "UA": {"name_ru": "Украина", "name_en": "Ukraine", "flag": "🇺🇦", "aliases": ["укр", "україна"]},
+    "KZ": {"name_ru": "Казахстан", "name_en": "Kazakhstan", "flag": "🇰🇿", "aliases": ["каз", "қазақстан"]},
+    "BY": {"name_ru": "Беларусь", "name_en": "Belarus", "flag": "🇧🇾", "aliases": ["рб", "белоруссия"]},
+    "GE": {"name_ru": "Грузия", "name_en": "Georgia", "flag": "🇬🇪", "aliases": ["сакартвело"]},
+    "AM": {"name_ru": "Армения", "name_en": "Armenia", "flag": "🇦🇲", "aliases": ["хайастан"]},
+    "AZ": {"name_ru": "Азербайджан", "name_en": "Azerbaijan", "flag": "🇦🇿", "aliases": ["аз"]},
+    "MD": {"name_ru": "Молдова", "name_en": "Moldova", "flag": "🇲🇩", "aliases": ["молдавия"]},
+    "KG": {"name_ru": "Кыргызстан", "name_en": "Kyrgyzstan", "flag": "🇰🇬", "aliases": ["киргизия"]},
+    "PL": {"name_ru": "Польша", "name_en": "Poland", "flag": "🇵🇱", "aliases": ["polska"]},
+    "DE": {"name_ru": "Германия", "name_en": "Germany", "flag": "🇩🇪", "aliases": ["deutschland", "нем"]},
+    "LV": {"name_ru": "Латвия", "name_en": "Latvia", "flag": "🇱🇻", "aliases": ["latvija"]},
+    "LT": {"name_ru": "Литва", "name_en": "Lithuania", "flag": "🇱🇹", "aliases": ["lietuva"]},
+    "EE": {"name_ru": "Эстония", "name_en": "Estonia", "flag": "🇪🇪", "aliases": ["eesti"]},
+    "CZ": {"name_ru": "Чехия", "name_en": "Czech Republic", "flag": "🇨🇿", "aliases": ["cesko"]},
+    "RS": {"name_ru": "Сербия", "name_en": "Serbia", "flag": "🇷🇸", "aliases": ["srbija"]},
+    "BG": {"name_ru": "Болгария", "name_en": "Bulgaria", "flag": "🇧🇬", "aliases": ["българия"]},
+    "RO": {"name_ru": "Румыния", "name_en": "Romania", "flag": "🇷🇴", "aliases": ["romania"]},
+    "FI": {"name_ru": "Финляндия", "name_en": "Finland", "flag": "🇫🇮", "aliases": ["suomi"]},
+    "SE": {"name_ru": "Швеция", "name_en": "Sweden", "flag": "🇸🇪", "aliases": ["sverige"]},
+    "GB": {"name_ru": "Великобритания", "name_en": "United Kingdom", "flag": "🇬🇧", "aliases": ["uk", "англия", "британия", "england"]},
+    "FR": {"name_ru": "Франция", "name_en": "France", "flag": "🇫🇷", "aliases": ["la france"]},
+    "IT": {"name_ru": "Италия", "name_en": "Italy", "flag": "🇮🇹", "aliases": ["italia"]},
+    "ES": {"name_ru": "Испания", "name_en": "Spain", "flag": "🇪🇸", "aliases": ["espana"]},
+    "NL": {"name_ru": "Нидерланды", "name_en": "Netherlands", "flag": "🇳🇱", "aliases": ["голландия", "holland"]},
+    "TR": {"name_ru": "Турция", "name_en": "Turkey", "flag": "🇹🇷", "aliases": ["turkiye"]},
+    "IL": {"name_ru": "Израиль", "name_en": "Israel", "flag": "🇮🇱", "aliases": ["israel"]},
+    "US": {"name_ru": "США", "name_en": "United States", "flag": "🇺🇸", "aliases": ["usa", "штаты", "америка"]},
 }
 
 def get_country_info(code: Optional[str]) -> Optional[dict]:
@@ -190,7 +190,10 @@ def get_country_info(code: Optional[str]) -> Optional[dict]:
         return None
     return COUNTRIES.get(code.upper().strip())
 
-def get_country_flag(code: Optional[str]) -> str:
+def get_country_flag(code: Optional[str], with_space: bool = True) -> str:
+    """Возвращает флаг-эмодзи страны (с пробелом по умолчанию для чистого форматирования) или пустую строку"""
     info = get_country_info(code)
-    return info["flag"] if info else ""
+    if not info:
+        return ""
+    return f"{info['flag']} " if with_space else info["flag"]
 

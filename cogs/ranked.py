@@ -1772,7 +1772,8 @@ class RankedCog(commands.Cog):
             flag = info["flag"]
             disp_name = name_ru if lang != "en" else name_en
             label = f"{flag} {disp_name} ({code})"
-            if not curr or curr in name_ru.lower() or curr in name_en.lower() or curr in code.lower():
+            aliases = info.get("aliases", [])
+            if not curr or curr in name_ru.lower() or curr in name_en.lower() or curr in code.lower() or any(curr in a for a in aliases):
                 choices.append(app_commands.Choice(name=label[:100], value=code))
                 if len(choices) >= 25:
                     break
