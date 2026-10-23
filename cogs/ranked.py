@@ -659,6 +659,41 @@ class ProfileView(discord.ui.View):
         await interaction.response.send_modal(modal)
 
 
+def is_voice_active(voice_state: Optional[discord.VoiceState]) -> bool:
+    """
+    Проверяет, что участник действительно активен в голосовом канале с ВКЛЮЧЕННЫМ микрофоном:
+    - Находится в голосовом канале (channel is not None)
+    - Не в AFK-канале (afk is False)
+    - Микрофон включен (не заглушен пользователем self_mute и не заглушен сервером mute)
+    - Наушники/звук включены (не задефанен пользователем self_deaf и не задефанен сервером deaf)
+    - Не заглушен на трибуне (suppress is False)
+    """
+    if not voice_state or not getattr(voice_state, "channel", None):
+        return False
+
+    if getattr(voice_state, "afk", False):
+        return False
+
+    channel = voice_state.channel
+    guild = getattr(channel, "guild", None)
+    if guild and getattr(guild, "afk_channel_id", None) and channel.id == guild.afk_channel_id:
+        return False
+
+    # Микрофон выключен (самим пользователем или сервером)
+    if getattr(voice_state, "self_mute", False) or getattr(voice_state, "mute", False):
+        return False
+
+    # Наушники/звук выключены (дефен)
+    if getattr(voice_state, "self_deaf", False) or getattr(voice_state, "deaf", False):
+        return False
+
+    # Заглушен на трибуне (Stage channel listener)
+    if getattr(voice_state, "suppress", False):
+        return False
+
+    return True
+
+
 class RankedCog(commands.Cog):
     def __init__(self, bot: commands.Bot, db: Database):
         self.bot = bot
@@ -671,37 +706,55 @@ class RankedCog(commands.Cog):
 
     def cog_unload(self):
         self.voice_tracker_task.cancel()
-        # При выгрузке кога сохраняем время всех текущих сессий в БД
+        # При выгрузке кога сохраняем время всех текущих активных сессий в БД
         now = time.time()
         for member_id, start_ts in list(self._voice_sessions.items()):
             elapsed = now - start_ts
-            try:
-                self.db.add_voice_seconds(member_id, elapsed)
-            except Exception:
-                pass
+            if elapsed >= 1.0:
+                try:
+                    self.db.add_voice_seconds(member_id, elapsed)
+                except Exception:
+                    pass
         self._voice_sessions.clear()
 
     @tasks.loop(seconds=15)
     async def voice_tracker_task(self):
         """
-        Фоновый цикл: каждые 15 секунд сохраняет набежавшее время всех участников в войсе.
+        Фоновый цикл: каждые 15 секунд сохраняет набежавшее время участников с ВКЛЮЧЕННЫМ микрофоном.
         Гарантирует, что при перезапуске или краше бота ни одна минута войса не пропадет.
         """
         if not self.bot.is_ready():
             return
         try:
             now = time.time()
+            active_member_ids = set()
             for guild in self.bot.guilds:
-                for vc in guild.voice_channels:
+                channels = list(guild.voice_channels)
+                if hasattr(guild, "stage_channels"):
+                    channels.extend(guild.stage_channels)
+                for vc in channels:
+                    if getattr(guild, "afk_channel_id", None) and vc.id == guild.afk_channel_id:
+                        continue
                     for member in vc.members:
                         if member.bot:
                             continue
-                        start_ts = self._voice_sessions.get(member.id)
-                        if start_ts is not None:
-                            elapsed = now - start_ts
-                            if elapsed >= 1.0:
-                                await asyncio.to_thread(self.db.add_voice_seconds, member.id, elapsed)
-                        self._voice_sessions[member.id] = now
+                        if is_voice_active(member.voice):
+                            active_member_ids.add(member.id)
+                            start_ts = self._voice_sessions.get(member.id)
+                            if start_ts is not None:
+                                elapsed = now - start_ts
+                                if elapsed >= 1.0:
+                                    await asyncio.to_thread(self.db.add_voice_seconds, member.id, elapsed)
+                            self._voice_sessions[member.id] = now
+
+            # Закрываем сессии тех, кто больше не активен с микрофоном (вышел / замьютился / задефался)
+            for member_id in list(self._voice_sessions.keys()):
+                if member_id not in active_member_ids:
+                    start_ts = self._voice_sessions.pop(member_id, None)
+                    if start_ts is not None:
+                        elapsed = now - start_ts
+                        if elapsed >= 1.0:
+                            await asyncio.to_thread(self.db.add_voice_seconds, member_id, elapsed)
         except Exception:
             pass
 
@@ -711,12 +764,17 @@ class RankedCog(commands.Cog):
             await self.bot.wait_until_ready()
         except RuntimeError:
             return
-        # Инициализация сессий для всех, кто уже был в войсе до старта бота
+        # Инициализация сессий только для тех, кто прямо сейчас в войсе с ВКЛЮЧЕННЫМ микрофоном
         now = time.time()
         for guild in self.bot.guilds:
-            for vc in guild.voice_channels:
+            channels = list(guild.voice_channels)
+            if hasattr(guild, "stage_channels"):
+                channels.extend(guild.stage_channels)
+            for vc in channels:
+                if getattr(guild, "afk_channel_id", None) and vc.id == guild.afk_channel_id:
+                    continue
                 for member in vc.members:
-                    if not member.bot and member.id not in self._voice_sessions:
+                    if not member.bot and is_voice_active(member.voice):
                         self._voice_sessions[member.id] = now
 
     @voice_tracker_task.error
@@ -770,22 +828,30 @@ class RankedCog(commands.Cog):
             return
         try:
             now = time.time()
-            # Пользователь зашел в голосовой канал
-            if before.channel is None and after.channel is not None:
-                self._voice_sessions[member.id] = now
-            # Пользователь вышел из голосового канала
-            elif before.channel is not None and after.channel is None:
+            was_active = is_voice_active(before)
+            is_active = is_voice_active(after)
+
+            if was_active and not is_active:
+                # Микрофон был выключен (замьютился, задефался, вышел из войса, перешел в AFK)
                 start_ts = self._voice_sessions.pop(member.id, None)
-                if start_ts:
+                if start_ts is not None:
                     elapsed = now - start_ts
-                    await asyncio.to_thread(self.db.add_voice_seconds, member.id, elapsed)
-            # Пользователь перешел в другой голосовой канал
-            elif before.channel is not None and after.channel is not None and before.channel.id != after.channel.id:
+                    if elapsed >= 1.0:
+                        await asyncio.to_thread(self.db.add_voice_seconds, member.id, elapsed)
+            elif not was_active and is_active:
+                # Микрофон был включен (размьютился, снял дефен, зашел в войс с включенным микрофоном)
+                self._voice_sessions[member.id] = now
+            elif was_active and is_active:
+                # Пользователь остался с включенным микрофоном (например, сменил канал)
                 start_ts = self._voice_sessions.get(member.id)
-                if start_ts:
+                if start_ts is not None:
                     elapsed = now - start_ts
-                    self._voice_sessions[member.id] = now
-                    await asyncio.to_thread(self.db.add_voice_seconds, member.id, elapsed)
+                    if elapsed >= 1.0:
+                        await asyncio.to_thread(self.db.add_voice_seconds, member.id, elapsed)
+                self._voice_sessions[member.id] = now
+            else:
+                # Был неактивен и остался неактивен
+                self._voice_sessions.pop(member.id, None)
         except Exception:
             pass
 
@@ -1223,8 +1289,8 @@ class RankedCog(commands.Cog):
 
         active_sec = 0.0
         now = time.time()
-        # Проверяем: находится ли участник в голосовом канале прямо сейчас
-        if getattr(target, "voice", None) and target.voice and target.voice.channel:
+        # Проверяем: находится ли участник в голосовом канале прямо сейчас с ВКЛЮЧЕННЫМ микрофоном
+        if getattr(target, "voice", None) and is_voice_active(target.voice):
             if target.id not in self._voice_sessions:
                 self._voice_sessions[target.id] = now
             else:
