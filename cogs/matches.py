@@ -1307,6 +1307,31 @@ class ChallengeView(discord.ui.View):
             except discord.Forbidden:
                 await interaction.followup.send(embed=embed)
 
+            # Переименовываем ветку дуэли в 🦆・Player1 vs Player2
+            target_thread = None
+            if isinstance(interaction.channel, discord.Thread):
+                target_thread = interaction.channel
+            elif ch and ch.get("channel_id") and guild:
+                try:
+                    ch_obj = guild.get_channel(ch["channel_id"]) or await guild.fetch_channel(ch["channel_id"])
+                    if isinstance(ch_obj, discord.Thread):
+                        target_thread = ch_obj
+                except Exception:
+                    pass
+
+            if target_thread:
+                try:
+                    c_name = challenger_member.display_name if challenger_member else "Player1"
+                    d_name = challenged_member.display_name
+                    c_country = await asyncio.to_thread(self.db.get_user_country, challenger_member.id) if challenger_member else None
+                    d_country = await asyncio.to_thread(self.db.get_user_country, challenged_member.id)
+                    c_flag = config.get_country_flag(c_country)
+                    d_flag = config.get_country_flag(d_country)
+                    new_t_name = f"🦆・{c_flag}{c_name[:10]} vs {d_flag}{d_name[:10]}"[:100]
+                    await target_thread.edit(name=new_t_name)
+                except Exception as e:
+                    log.warning(f"⚠️ Не удалось переименовать ветку отклоненного вызова: {e}")
+
             guild_name = guild.name.strip() if guild and guild.name and guild.name.strip() else "GANGHUB"
             # Отправляем ЛС нарушителю
             if self.challenged:
@@ -1655,6 +1680,18 @@ class MatchesCog(commands.Cog):
         try:
             channel = guild.get_channel(channel_id) or await self.bot.fetch_channel(channel_id)
             if channel:
+                if isinstance(channel, discord.Thread):
+                    try:
+                        c_name = challenger_member.display_name if challenger_member else str(challenger_id)
+                        d_name = challenged_member.display_name if challenged_member else str(challenged_id)
+                        c_country = await asyncio.to_thread(self.db.get_user_country, challenger_id)
+                        d_country = await asyncio.to_thread(self.db.get_user_country, challenged_id)
+                        c_flag = config.get_country_flag(c_country)
+                        d_flag = config.get_country_flag(d_country)
+                        new_t_name = f"🦆・{c_flag}{c_name[:10]} vs {d_flag}{d_name[:10]}"[:100]
+                        await channel.edit(name=new_t_name)
+                    except Exception as e:
+                        log.warning(f"⚠️ Не удалось переименовать ветку авто-дака: {e}")
                 msg = await channel.fetch_message(message_id)
                 if msg:
                     res_embed = discord.Embed(
@@ -2118,15 +2155,55 @@ class MatchesCog(commands.Cog):
             except Exception as e:
                 log.warning(f"⚠️ [Duck Command] Не удалось выдать роль {duck_role.name}: {e}")
 
-        # 7. Если канал — ветка дуэли, переименовываем
+        # 7. Если канал — ветка дуэли (или есть связанная ветка), переименовываем
+        target_thread = None
         if isinstance(channel, discord.Thread):
+            target_thread = channel
+        elif ch and ch.get("channel_id") and guild:
             try:
-                u_country = await asyncio.to_thread(self.db.get_user_country, user.id)
-                u_flag = config.get_country_flag(u_country)
-                new_t_name = f"🦆・Дак: {u_flag}{user.display_name[:10]}"[:100]
-                await channel.edit(name=new_t_name)
+                ch_obj = guild.get_channel(ch["channel_id"]) or await guild.fetch_channel(ch["channel_id"])
+                if isinstance(ch_obj, discord.Thread):
+                    target_thread = ch_obj
             except Exception:
                 pass
+
+        if target_thread:
+            try:
+                p1_name = None
+                p2_name = None
+                p1_flag = ""
+                p2_flag = ""
+
+                if ch:
+                    c_id = ch.get("challenger_id")
+                    d_id = ch.get("challenged_id")
+                    c_mem = guild.get_member(c_id) if guild else None
+                    d_mem = guild.get_member(d_id) if guild else None
+                    p1_name = c_mem.display_name if c_mem else f"<@{c_id}>"
+                    p2_name = d_mem.display_name if d_mem else f"<@{d_id}>"
+                    c_country = await asyncio.to_thread(self.db.get_user_country, c_id)
+                    d_country = await asyncio.to_thread(self.db.get_user_country, d_id)
+                    p1_flag = config.get_country_flag(c_country)
+                    p2_flag = config.get_country_flag(d_country)
+                elif resolved_opp_id:
+                    opp_mem = guild.get_member(resolved_opp_id) if guild else None
+                    p1_name = user.display_name
+                    p2_name = opp_mem.display_name if opp_mem else f"<@{resolved_opp_id}>"
+                    u_country = await asyncio.to_thread(self.db.get_user_country, user.id)
+                    o_country = await asyncio.to_thread(self.db.get_user_country, resolved_opp_id)
+                    p1_flag = config.get_country_flag(u_country)
+                    p2_flag = config.get_country_flag(o_country)
+
+                if p1_name and p2_name:
+                    new_t_name = f"🦆・{p1_flag}{p1_name[:10]} vs {p2_flag}{p2_name[:10]}"[:100]
+                else:
+                    u_country = await asyncio.to_thread(self.db.get_user_country, user.id)
+                    u_flag = config.get_country_flag(u_country)
+                    new_t_name = f"🦆・{u_flag}{user.display_name[:12]}"[:100]
+
+                await target_thread.edit(name=new_t_name)
+            except Exception as e:
+                log.warning(f"⚠️ Не удалось переименовать ветку дака: {e}")
 
         # 8. Формируем эмбед для ветки
         delta_str = f"-{int(round(abs(actual_delta)))}" if actual_delta < 0 else f"{int(round(actual_delta))}"
