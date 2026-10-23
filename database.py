@@ -1065,6 +1065,8 @@ class Database:
                 return s, vips[s]
         return None, None
 
+    get_first_free_league_vip = get_available_league_vip
+
     def reserve_league_vip(self, slot: str, challenge_id: int, channel_id: int, p1_id: int, p2_id: int) -> bool:
         """Бронирует VIP-слот под конкретную дуэль"""
         with self._lock:

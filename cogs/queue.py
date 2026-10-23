@@ -200,7 +200,7 @@ class QueueCog(commands.Cog):
             diff = int(round(abs(user_rating - opponent_rating)))
 
             # 1. Авто-выделение свободного VIP-сервера Лиги
-            free_slot, free_url = await asyncio.to_thread(self.db.get_first_free_league_vip)
+            free_slot, free_url = await asyncio.to_thread(self.db.get_available_league_vip)
             p1_vip = await asyncio.to_thread(self.db.get_user_vip, interaction.user.id)
             p2_vip = await asyncio.to_thread(self.db.get_user_vip, opponent.id)
 
